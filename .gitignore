@@ -1,0 +1,15 @@
+# Secretos generados por scripts/generar-secretos.sh (nunca al repositorio)
+secrets/
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+*.egg-info/
+
+# Editores y sistema
+.idea/
+.vscode/
+.DS_Store
