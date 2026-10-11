@@ -79,7 +79,7 @@ Quedan como diseño, igual que en el documento:
 | `sit` | Python 3.12 + FastAPI | 8000 | 8010 |
 | `despachos` | Python 3.12 + FastAPI | 8000 | 8020 |
 | `rastreo` | Python 3.12 + FastAPI | 8000 | 8030 |
-| `mock-dhl` | Python 3.12 + FastAPI | 8000 | 8081 |
+| `mock-dhl` | Python 3.12 + FastAPI | 8000 | 8082 |
 | `mock-coordinadora` | Java + SoapUI (`mockservicerunner.sh`) | 8088 | 8088 |
 | `postgres` | PostgreSQL 16 | 5432 | — |
 | `redis` | Redis 7 | 6379 | — |
@@ -285,7 +285,7 @@ sit/
 | `equivalencia_estado` | (`transportadora`, `codigo_operador`) | `estado_canonico` |
 | `equivalencia_ciudad` | (`transportadora`, `divipola`); `codigo_operador` único por transportadora | `codigo_operador` |
 | `equivalencia_unidad` | (`transportadora`, `magnitud`) | `unidad_operador`, `factor_a_canonico` |
-| `guia` | `numero` | `transportadora`, `pedido_id` (puede ser nulo un instante, ver 8.6), `ultimo_estado` (nulo hasta el primer estado), `creada_en`, `actualizada_en` |
+| `guia` | `numero` | `transportadora`, `pedido_id` (puede ser nulo un instante, ver 8.6), `ultimo_estado` (nulo hasta el primer estado), `eventos_leidos` (cuántos eventos del historial del operador ya procesó la consulta programada), `creada_en`, `actualizada_en` |
 | `estado_sin_equivalencia` | `id`; única (`transportadora`, `codigo_operador`, `numero_guia`) | `registrado_en` |
 
 Las dos últimas tablas son internas del SIT (sección 18). La semilla (`catalogo/semilla.sql`) carga los datos de la sección 7.3. Se ejecuta al arrancar, solo si `transportadora` está vacía.
@@ -354,7 +354,7 @@ FastAPI genera el contrato OpenAPI en `/openapi.json` y la documentación en `/d
 ### 8.6 Sincronizador de estados
 
 - **Webhook (DHL):** `POST /api/v1/webhooks/dhl` → `mapeador.leer_webhook` → `procesar_estado(...)`.
-- **Consulta programada (Coordinadora):** al arrancar, por cada transportadora activa con `frecuencia_sincronizacion_seg` (10 s en la semilla), se programa un trabajo de APScheduler. El trabajo consulta `ConsultarEstadoGuia` para cada guía de esa transportadora cuyo `ultimo_estado` no sea `ENTREGADA` ni `DEVUELTA`, toma el último estado del historial y llama a `procesar_estado(...)`.
+- **Consulta programada (Coordinadora):** al arrancar, por cada transportadora activa con `frecuencia_sincronizacion_seg` (10 s en la semilla), se programa un trabajo de APScheduler. El trabajo consulta `ConsultarEstadoGuia` para cada guía de esa transportadora cuyo `ultimo_estado` no sea `ENTREGADA` ni `DEVUELTA`, procesa en orden los eventos del historial que aún no había leído (`eventos_leidos`) y llama a `procesar_estado(...)` con cada uno. Así no se pierde ningún estado aunque cambie varias veces entre dos consultas.
 - **`procesar_estado(transportadora, numero_guia, evento, codigo_operador, sin_equivalencia)`:**
   1. Si `sin_equivalencia`, registra la fila en `estado_sin_equivalencia` (idempotente) y escribe un aviso en el log.
   2. Si el estado canónico es distinto de `guia.ultimo_estado`, actualiza la guía y publica `envio.estado.actualizado`. Si es igual, no publica nada; por ejemplo, `AF` → `DF` siguen siendo `EN_TRANSITO`.
@@ -504,7 +504,7 @@ Se usan `postman/Entrega3.postman_collection.json` y `postman/Local.postman_envi
 3. **Pedido B, forzando Coordinadora, por evento.** `scripts/publicar-pedido.sh PED-1002 coordinadora` ejecuta `XADD` en `pedido.confirmado`. Luego, `GET /api/v1/despachos/PED-1002` muestra una guía de 12 dígitos.
 4. **Mismo formato.** Las guías A y B se comparan lado a lado: la misma estructura canónica.
 5. **Pedido C, sin forzar.** La respuesta muestra las dos cotizaciones en COP y kg, ya comparables, y la elección de la más barata.
-6. **Cambio de estado en DHL.** `POST :8081/demo/envios/{guiaA}/estado {"typeCode":"PU"}`, y después `GET /api/v1/rastreo/{guiaA}` muestra `RECOGIDA`.
+6. **Cambio de estado en DHL.** `POST :8082/demo/envios/{guiaA}/estado {"typeCode":"PU"}`, y después `GET /api/v1/rastreo/{guiaA}` muestra `RECOGIDA`.
 7. **Cambio de estado en Coordinadora.** Petición SOAP `CambiarEstadoGuia` (`codigoEstado` 6) a `:8088/ws/guias`. A los 10 s o menos, `GET /api/v1/rastreo/{guiaB}` muestra `EN_REPARTO`.
 8. **Estado sin equivalencia.** Código `XX` en DHL: Rastreo muestra `NOVEDAD`, y el log del SIT y la tabla `estado_sin_equivalencia` muestran el registro.
 9. **Consulta en vivo.** `GET /api/v1/envios/{guiaB}/estados` como `operador1`: el historial de Coordinadora ya traducido.
