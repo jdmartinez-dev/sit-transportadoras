@@ -1,0 +1,20 @@
+name: pruebas
+on:
+  push:
+  pull_request:
+jobs:
+  pruebas:
+    runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements-dev.txt
+      - run: pytest -m "not e2e"
+        env:
+          REDIS_URL_PRUEBAS: redis://localhost:6379/0
