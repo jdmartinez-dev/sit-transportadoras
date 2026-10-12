@@ -1,0 +1,481 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<con:soapui-project id="8d0e6d93-6faf-5eaa-98eb-becd183ff6e0" activeEnvironment="Default" name="Coordinadora simulada" resourceRoot="" soapui-version="5.7.2" abortOnError="false" runType="SEQUENTIAL" xmlns:con="http://eviware.com/soapui/config">
+  <con:settings/>
+  <con:interface xsi:type="con:WsdlInterface" id="64f48a4f-f40f-53d7-af48-d3b879aaf852" wsaVersion="NONE" name="GuiasBinding" type="wsdl" bindingName="{http://coordinadora.simulada/guias}GuiasBinding" soapVersion="1_1" anonymous="optional" definition="file:/opt/coordinadora/coordinadora.wsdl" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <con:settings/>
+    <con:definitionCache type="TEXT" rootPart="file:/opt/coordinadora/coordinadora.wsdl">
+      <con:part>
+        <con:url>file:/opt/coordinadora/coordinadora.wsdl</con:url>
+        <con:content><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Contrato propio de la transportadora Coordinadora SIMULADA (Entrega 3).
+  No es el contrato real de Coordinadora: define un modelo distinto al canónico
+  (peso en gramos, ciudades DIVIPOLA de 8 dígitos, estados numéricos) para
+  demostrar el patrón Data Model Transformation.
+-->
+<wsdl:definitions name="GuiasCoordinadora"
+                  targetNamespace="http://coordinadora.simulada/guias"
+                  xmlns:tns="http://coordinadora.simulada/guias"
+                  xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+                  xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+                  xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+
+  <wsdl:types>
+    <xsd:schema targetNamespace="http://coordinadora.simulada/guias" elementFormDefault="qualified">
+
+      <xsd:complexType name="Pieza">
+        <xsd:sequence>
+          <xsd:element name="pesoGr" type="xsd:int"/>
+          <xsd:element name="largoCm" type="xsd:int"/>
+          <xsd:element name="anchoCm" type="xsd:int"/>
+          <xsd:element name="altoCm" type="xsd:int"/>
+        </xsd:sequence>
+      </xsd:complexType>
+
+      <xsd:complexType name="Destinatario">
+        <xsd:sequence>
+          <xsd:element name="nombre" type="xsd:string"/>
+          <xsd:element name="direccion" type="xsd:string"/>
+          <xsd:element name="telefono" type="xsd:string"/>
+          <xsd:element name="ciudad" type="xsd:string"/>
+        </xsd:sequence>
+      </xsd:complexType>
+
+      <xsd:complexType name="Estado">
+        <xsd:sequence>
+          <xsd:element name="codigo" type="xsd:string"/>
+          <xsd:element name="descripcion" type="xsd:string"/>
+          <xsd:element name="fecha" type="xsd:string"/>
+        </xsd:sequence>
+      </xsd:complexType>
+
+      <xsd:element name="CotizarFlete">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="ciudadOrigen" type="xsd:string"/>
+            <xsd:element name="ciudadDestino" type="xsd:string"/>
+            <xsd:element name="piezas" type="tns:Pieza" maxOccurs="unbounded"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+      <xsd:element name="CotizarFleteRespuesta">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="valorFlete" type="xsd:int"/>
+            <xsd:element name="pesoLiquidadoGr" type="xsd:int"/>
+            <xsd:element name="diasEntrega" type="xsd:int"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="GenerarGuia">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="referencia" type="xsd:string"/>
+            <xsd:element name="ciudadOrigen" type="xsd:string"/>
+            <xsd:element name="destinatario" type="tns:Destinatario"/>
+            <xsd:element name="piezas" type="tns:Pieza" maxOccurs="unbounded"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+      <xsd:element name="GenerarGuiaRespuesta">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="codigoRemision" type="xsd:string"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="ProgramarRecogida">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="codigoRemision" type="xsd:string"/>
+            <xsd:element name="fechaRecogida" type="xsd:string"/>
+            <xsd:element name="franja" type="xsd:string"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+      <xsd:element name="ProgramarRecogidaRespuesta">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="numeroRecogida" type="xsd:string"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="ConsultarEstadoGuia">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="codigoRemision" type="xsd:string"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+      <xsd:element name="ConsultarEstadoGuiaRespuesta">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="codigoRemision" type="xsd:string"/>
+            <xsd:element name="estados" type="tns:Estado" maxOccurs="unbounded"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="CambiarEstadoGuia">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="codigoRemision" type="xsd:string"/>
+            <xsd:element name="codigoEstado" type="xsd:string"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+      <xsd:element name="CambiarEstadoGuiaRespuesta">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="resultado" type="xsd:string"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+    </xsd:schema>
+  </wsdl:types>
+
+  <wsdl:message name="CotizarFleteEntrada"><wsdl:part name="parameters" element="tns:CotizarFlete"/></wsdl:message>
+  <wsdl:message name="CotizarFleteSalida"><wsdl:part name="parameters" element="tns:CotizarFleteRespuesta"/></wsdl:message>
+  <wsdl:message name="GenerarGuiaEntrada"><wsdl:part name="parameters" element="tns:GenerarGuia"/></wsdl:message>
+  <wsdl:message name="GenerarGuiaSalida"><wsdl:part name="parameters" element="tns:GenerarGuiaRespuesta"/></wsdl:message>
+  <wsdl:message name="ProgramarRecogidaEntrada"><wsdl:part name="parameters" element="tns:ProgramarRecogida"/></wsdl:message>
+  <wsdl:message name="ProgramarRecogidaSalida"><wsdl:part name="parameters" element="tns:ProgramarRecogidaRespuesta"/></wsdl:message>
+  <wsdl:message name="ConsultarEstadoGuiaEntrada"><wsdl:part name="parameters" element="tns:ConsultarEstadoGuia"/></wsdl:message>
+  <wsdl:message name="ConsultarEstadoGuiaSalida"><wsdl:part name="parameters" element="tns:ConsultarEstadoGuiaRespuesta"/></wsdl:message>
+  <wsdl:message name="CambiarEstadoGuiaEntrada"><wsdl:part name="parameters" element="tns:CambiarEstadoGuia"/></wsdl:message>
+  <wsdl:message name="CambiarEstadoGuiaSalida"><wsdl:part name="parameters" element="tns:CambiarEstadoGuiaRespuesta"/></wsdl:message>
+
+  <wsdl:portType name="GuiasPortType">
+    <wsdl:operation name="CotizarFlete">
+      <wsdl:input message="tns:CotizarFleteEntrada"/>
+      <wsdl:output message="tns:CotizarFleteSalida"/>
+    </wsdl:operation>
+    <wsdl:operation name="GenerarGuia">
+      <wsdl:input message="tns:GenerarGuiaEntrada"/>
+      <wsdl:output message="tns:GenerarGuiaSalida"/>
+    </wsdl:operation>
+    <wsdl:operation name="ProgramarRecogida">
+      <wsdl:input message="tns:ProgramarRecogidaEntrada"/>
+      <wsdl:output message="tns:ProgramarRecogidaSalida"/>
+    </wsdl:operation>
+    <wsdl:operation name="ConsultarEstadoGuia">
+      <wsdl:input message="tns:ConsultarEstadoGuiaEntrada"/>
+      <wsdl:output message="tns:ConsultarEstadoGuiaSalida"/>
+    </wsdl:operation>
+    <wsdl:operation name="CambiarEstadoGuia">
+      <wsdl:input message="tns:CambiarEstadoGuiaEntrada"/>
+      <wsdl:output message="tns:CambiarEstadoGuiaSalida"/>
+    </wsdl:operation>
+  </wsdl:portType>
+
+  <wsdl:binding name="GuiasBinding" type="tns:GuiasPortType">
+    <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+    <wsdl:operation name="CotizarFlete">
+      <soap:operation soapAction="http://coordinadora.simulada/guias/CotizarFlete"/>
+      <wsdl:input><soap:body use="literal"/></wsdl:input>
+      <wsdl:output><soap:body use="literal"/></wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GenerarGuia">
+      <soap:operation soapAction="http://coordinadora.simulada/guias/GenerarGuia"/>
+      <wsdl:input><soap:body use="literal"/></wsdl:input>
+      <wsdl:output><soap:body use="literal"/></wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="ProgramarRecogida">
+      <soap:operation soapAction="http://coordinadora.simulada/guias/ProgramarRecogida"/>
+      <wsdl:input><soap:body use="literal"/></wsdl:input>
+      <wsdl:output><soap:body use="literal"/></wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="ConsultarEstadoGuia">
+      <soap:operation soapAction="http://coordinadora.simulada/guias/ConsultarEstadoGuia"/>
+      <wsdl:input><soap:body use="literal"/></wsdl:input>
+      <wsdl:output><soap:body use="literal"/></wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="CambiarEstadoGuia">
+      <soap:operation soapAction="http://coordinadora.simulada/guias/CambiarEstadoGuia"/>
+      <wsdl:input><soap:body use="literal"/></wsdl:input>
+      <wsdl:output><soap:body use="literal"/></wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+
+  <wsdl:service name="GuiasService">
+    <wsdl:port name="GuiasPort" binding="tns:GuiasBinding">
+      <soap:address location="http://localhost:8088/ws/guias"/>
+    </wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>
+]]></con:content>
+        <con:type>http://schemas.xmlsoap.org/wsdl/</con:type>
+      </con:part>
+    </con:definitionCache>
+    <con:endpoints>
+      <con:endpoint>http://localhost:8088/ws/guias</con:endpoint>
+    </con:endpoints>
+    <con:operation id="ae1cea74-eb8a-5465-ac29-5b5baeb6277e" isOneWay="false" action="http://coordinadora.simulada/guias/CotizarFlete" name="CotizarFlete" bindingOperationName="CotizarFlete" type="Request-Response" inputName="" receivesAttachments="false" sendsAttachments="false" anonymous="optional">
+      <con:settings/>
+    </con:operation>
+    <con:operation id="55be9efa-b12a-5a5d-a3cc-c5c587ff15d5" isOneWay="false" action="http://coordinadora.simulada/guias/GenerarGuia" name="GenerarGuia" bindingOperationName="GenerarGuia" type="Request-Response" inputName="" receivesAttachments="false" sendsAttachments="false" anonymous="optional">
+      <con:settings/>
+    </con:operation>
+    <con:operation id="a9831519-b1ec-5904-9969-ed65cfa2910c" isOneWay="false" action="http://coordinadora.simulada/guias/ProgramarRecogida" name="ProgramarRecogida" bindingOperationName="ProgramarRecogida" type="Request-Response" inputName="" receivesAttachments="false" sendsAttachments="false" anonymous="optional">
+      <con:settings/>
+    </con:operation>
+    <con:operation id="b23b0303-3ca3-5b10-8566-9b02777a510f" isOneWay="false" action="http://coordinadora.simulada/guias/ConsultarEstadoGuia" name="ConsultarEstadoGuia" bindingOperationName="ConsultarEstadoGuia" type="Request-Response" inputName="" receivesAttachments="false" sendsAttachments="false" anonymous="optional">
+      <con:settings/>
+    </con:operation>
+    <con:operation id="a278d90f-3919-5bbb-aec2-1e7fe0e16c91" isOneWay="false" action="http://coordinadora.simulada/guias/CambiarEstadoGuia" name="CambiarEstadoGuia" bindingOperationName="CambiarEstadoGuia" type="Request-Response" inputName="" receivesAttachments="false" sendsAttachments="false" anonymous="optional">
+      <con:settings/>
+    </con:operation>
+  </con:interface>
+  <con:mockService id="87ddcf74-397e-5154-8f80-15b5b539e41b" port="8088" path="/ws/guias" host="localhost" name="CoordinadoraMock" bindToHostOnly="false" docroot="">
+    <con:settings>
+      <con:setting id="com.eviware.soapui.impl.wsdl.mock.WsdlMockService@require-soap-action">false</con:setting>
+    </con:settings>
+    <con:properties/>
+    <con:mockOperation name="CotizarFlete" id="ec6d112e-1bfb-515e-9367-0c8aea1bcf7d" interface="GuiasBinding" operation="CotizarFlete">
+      <con:settings/>
+      <con:defaultResponse>Respuesta</con:defaultResponse>
+      <con:dispatchStyle>SEQUENCE</con:dispatchStyle>
+      <con:response name="Respuesta" id="9075eae0-2b5c-5008-af75-8eedf914e799" httpResponseStatus="200" encoding="UTF-8">
+        <con:settings/>
+        <con:script><![CDATA[import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
+import com.eviware.soapui.support.XmlHolder
+import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+
+// Estado del simulador: un archivo JSON dentro del contenedor (se pierde al reiniciarlo).
+def archivo = new File(System.getenv("ARCHIVO_GUIAS") ?: "/tmp/guias-coordinadora.json")
+def leer = { archivo.exists() ? new JsonSlurper().parseText(archivo.getText("UTF-8")) : [consecutivo: 0, recogidas: 0, guias: [:]] }
+def guardar = { datos -> archivo.setText(JsonOutput.toJson(datos), "UTF-8") }
+def ahora = { LocalDateTime.now(ZoneId.of("America/Bogota")).format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")) }
+def fallo = { String mensaje -> "<soapenv:Fault><faultcode>soapenv:Client</faultcode><faultstring>${mensaje}</faultstring></soapenv:Fault>".toString() }
+def solicitud = new XmlHolder(mockRequest.requestContent)
+solicitud.declareNamespace("g", "http://coordinadora.simulada/guias")
+
+def origen = solicitud.getNodeValue("//g:ciudadOrigen")
+def destino = solicitud.getNodeValue("//g:ciudadDestino")
+if (!(origen ==~ /\d{8}/) || !(destino ==~ /\d{8}/)) {
+    requestContext.cuerpo = fallo("Ciudad no válida: se espera el código DIVIPOLA de 8 dígitos")
+    return
+}
+def pesos = solicitud.getNodeValues("//g:piezas/g:pesoGr")
+def largos = solicitud.getNodeValues("//g:piezas/g:largoCm")
+def anchos = solicitud.getNodeValues("//g:piezas/g:anchoCm")
+def altos = solicitud.getNodeValues("//g:piezas/g:altoCm")
+// Peso liquidado: el mayor entre el real y el volumétrico (400 kg/m3 = 0,4 g/cm3), pieza por pieza.
+long liquidado = 0
+for (int i = 0; i < pesos.length; i++) {
+    long real = pesos[i] as long
+    long volumen = Math.round((largos[i] as long) * (anchos[i] as long) * (altos[i] as long) * 0.4d)
+    liquidado += Math.max(real, volumen)
+}
+long kilos = (long) Math.ceil(liquidado / 1000.0d)
+double factor = origen == destino ? 1.0d : 1.3d
+long valor = Math.round((9000 + 6000 * kilos) * factor)
+int dias = origen == destino ? 1 : 3
+requestContext.cuerpo = "<g:CotizarFleteRespuesta><g:valorFlete>${valor}</g:valorFlete><g:pesoLiquidadoGr>${liquidado}</g:pesoLiquidadoGr><g:diasEntrega>${dias}</g:diasEntrega></g:CotizarFleteRespuesta>".toString()
+]]></con:script>
+        <con:responseContent><![CDATA[<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:g="http://coordinadora.simulada/guias">
+   <soapenv:Header/>
+   <soapenv:Body>${cuerpo}</soapenv:Body>
+</soapenv:Envelope>]]></con:responseContent>
+        <con:wsaConfig mustUnderstand="NONE" version="200508" action="http://coordinadora.simulada/guias/CotizarFlete"/>
+      </con:response>
+      <con:dispatchConfig/>
+    </con:mockOperation>
+    <con:mockOperation name="GenerarGuia" id="81bfff43-20bd-5402-b4ac-c1c5431f1539" interface="GuiasBinding" operation="GenerarGuia">
+      <con:settings/>
+      <con:defaultResponse>Respuesta</con:defaultResponse>
+      <con:dispatchStyle>SEQUENCE</con:dispatchStyle>
+      <con:response name="Respuesta" id="cd223b04-7835-5e63-9a04-eb6a6749fc13" httpResponseStatus="200" encoding="UTF-8">
+        <con:settings/>
+        <con:script><![CDATA[import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
+import com.eviware.soapui.support.XmlHolder
+import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+
+// Estado del simulador: un archivo JSON dentro del contenedor (se pierde al reiniciarlo).
+def archivo = new File(System.getenv("ARCHIVO_GUIAS") ?: "/tmp/guias-coordinadora.json")
+def leer = { archivo.exists() ? new JsonSlurper().parseText(archivo.getText("UTF-8")) : [consecutivo: 0, recogidas: 0, guias: [:]] }
+def guardar = { datos -> archivo.setText(JsonOutput.toJson(datos), "UTF-8") }
+def ahora = { LocalDateTime.now(ZoneId.of("America/Bogota")).format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")) }
+def fallo = { String mensaje -> "<soapenv:Fault><faultcode>soapenv:Client</faultcode><faultstring>${mensaje}</faultstring></soapenv:Fault>".toString() }
+def solicitud = new XmlHolder(mockRequest.requestContent)
+solicitud.declareNamespace("g", "http://coordinadora.simulada/guias")
+
+synchronized (System) {
+    def datos = leer()
+    datos.consecutivo = (datos.consecutivo ?: 0) + 1
+    def numero = String.format("9%011d", datos.consecutivo as long)
+    datos.guias[numero] = [
+        referencia   : solicitud.getNodeValue("//g:referencia"),
+        ciudadOrigen : solicitud.getNodeValue("//g:ciudadOrigen"),
+        ciudadDestino: solicitud.getNodeValue("//g:destinatario/g:ciudad"),
+        estados      : [[codigo: "1", descripcion: "Guía generada", fecha: ahora()]]
+    ]
+    guardar(datos)
+    requestContext.cuerpo = "<g:GenerarGuiaRespuesta><g:codigoRemision>${numero}</g:codigoRemision></g:GenerarGuiaRespuesta>".toString()
+}
+]]></con:script>
+        <con:responseContent><![CDATA[<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:g="http://coordinadora.simulada/guias">
+   <soapenv:Header/>
+   <soapenv:Body>${cuerpo}</soapenv:Body>
+</soapenv:Envelope>]]></con:responseContent>
+        <con:wsaConfig mustUnderstand="NONE" version="200508" action="http://coordinadora.simulada/guias/GenerarGuia"/>
+      </con:response>
+      <con:dispatchConfig/>
+    </con:mockOperation>
+    <con:mockOperation name="ProgramarRecogida" id="68aa88ac-6795-5785-b8bf-e0b4f5711180" interface="GuiasBinding" operation="ProgramarRecogida">
+      <con:settings/>
+      <con:defaultResponse>Respuesta</con:defaultResponse>
+      <con:dispatchStyle>SEQUENCE</con:dispatchStyle>
+      <con:response name="Respuesta" id="33d91e65-1ed0-5dc5-9728-0cfc95b023f8" httpResponseStatus="200" encoding="UTF-8">
+        <con:settings/>
+        <con:script><![CDATA[import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
+import com.eviware.soapui.support.XmlHolder
+import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+
+// Estado del simulador: un archivo JSON dentro del contenedor (se pierde al reiniciarlo).
+def archivo = new File(System.getenv("ARCHIVO_GUIAS") ?: "/tmp/guias-coordinadora.json")
+def leer = { archivo.exists() ? new JsonSlurper().parseText(archivo.getText("UTF-8")) : [consecutivo: 0, recogidas: 0, guias: [:]] }
+def guardar = { datos -> archivo.setText(JsonOutput.toJson(datos), "UTF-8") }
+def ahora = { LocalDateTime.now(ZoneId.of("America/Bogota")).format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")) }
+def fallo = { String mensaje -> "<soapenv:Fault><faultcode>soapenv:Client</faultcode><faultstring>${mensaje}</faultstring></soapenv:Fault>".toString() }
+def solicitud = new XmlHolder(mockRequest.requestContent)
+solicitud.declareNamespace("g", "http://coordinadora.simulada/guias")
+
+synchronized (System) {
+    def datos = leer()
+    def numero = solicitud.getNodeValue("//g:codigoRemision")
+    def guia = datos.guias[numero]
+    if (guia == null) {
+        requestContext.cuerpo = fallo("Remisión no encontrada: ${numero}")
+        return
+    }
+    def franja = solicitud.getNodeValue("//g:franja")
+    if (!(franja in ["AM", "PM"])) {
+        requestContext.cuerpo = fallo("Franja no válida: ${franja} (se espera AM o PM)")
+        return
+    }
+    datos.recogidas = (datos.recogidas ?: 0) + 1
+    def recogida = String.format("REC-%06d", datos.recogidas as long)
+    guia.recogida = [numero: recogida, fecha: solicitud.getNodeValue("//g:fechaRecogida"), franja: franja]
+    guardar(datos)
+    requestContext.cuerpo = "<g:ProgramarRecogidaRespuesta><g:numeroRecogida>${recogida}</g:numeroRecogida></g:ProgramarRecogidaRespuesta>".toString()
+}
+]]></con:script>
+        <con:responseContent><![CDATA[<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:g="http://coordinadora.simulada/guias">
+   <soapenv:Header/>
+   <soapenv:Body>${cuerpo}</soapenv:Body>
+</soapenv:Envelope>]]></con:responseContent>
+        <con:wsaConfig mustUnderstand="NONE" version="200508" action="http://coordinadora.simulada/guias/ProgramarRecogida"/>
+      </con:response>
+      <con:dispatchConfig/>
+    </con:mockOperation>
+    <con:mockOperation name="ConsultarEstadoGuia" id="bd49f7c5-e58f-5612-b14a-d2febf3b03b5" interface="GuiasBinding" operation="ConsultarEstadoGuia">
+      <con:settings/>
+      <con:defaultResponse>Respuesta</con:defaultResponse>
+      <con:dispatchStyle>SEQUENCE</con:dispatchStyle>
+      <con:response name="Respuesta" id="9a1db80e-14b6-5f2e-abec-addd9b6ed274" httpResponseStatus="200" encoding="UTF-8">
+        <con:settings/>
+        <con:script><![CDATA[import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
+import com.eviware.soapui.support.XmlHolder
+import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+
+// Estado del simulador: un archivo JSON dentro del contenedor (se pierde al reiniciarlo).
+def archivo = new File(System.getenv("ARCHIVO_GUIAS") ?: "/tmp/guias-coordinadora.json")
+def leer = { archivo.exists() ? new JsonSlurper().parseText(archivo.getText("UTF-8")) : [consecutivo: 0, recogidas: 0, guias: [:]] }
+def guardar = { datos -> archivo.setText(JsonOutput.toJson(datos), "UTF-8") }
+def ahora = { LocalDateTime.now(ZoneId.of("America/Bogota")).format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")) }
+def fallo = { String mensaje -> "<soapenv:Fault><faultcode>soapenv:Client</faultcode><faultstring>${mensaje}</faultstring></soapenv:Fault>".toString() }
+def solicitud = new XmlHolder(mockRequest.requestContent)
+solicitud.declareNamespace("g", "http://coordinadora.simulada/guias")
+
+def datos
+synchronized (System) { datos = leer() }
+def numero = solicitud.getNodeValue("//g:codigoRemision")
+def guia = datos.guias[numero]
+if (guia == null) {
+    requestContext.cuerpo = fallo("Remisión no encontrada: ${numero}")
+    return
+}
+def estados = guia.estados.collect { e ->
+    "<g:estados><g:codigo>${e.codigo}</g:codigo><g:descripcion>${e.descripcion}</g:descripcion><g:fecha>${e.fecha}</g:fecha></g:estados>"
+}.join("")
+requestContext.cuerpo = "<g:ConsultarEstadoGuiaRespuesta><g:codigoRemision>${numero}</g:codigoRemision>${estados}</g:ConsultarEstadoGuiaRespuesta>".toString()
+]]></con:script>
+        <con:responseContent><![CDATA[<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:g="http://coordinadora.simulada/guias">
+   <soapenv:Header/>
+   <soapenv:Body>${cuerpo}</soapenv:Body>
+</soapenv:Envelope>]]></con:responseContent>
+        <con:wsaConfig mustUnderstand="NONE" version="200508" action="http://coordinadora.simulada/guias/ConsultarEstadoGuia"/>
+      </con:response>
+      <con:dispatchConfig/>
+    </con:mockOperation>
+    <con:mockOperation name="CambiarEstadoGuia" id="cb382ad9-5367-5385-ac21-e5f30ac8ebf9" interface="GuiasBinding" operation="CambiarEstadoGuia">
+      <con:settings/>
+      <con:defaultResponse>Respuesta</con:defaultResponse>
+      <con:dispatchStyle>SEQUENCE</con:dispatchStyle>
+      <con:response name="Respuesta" id="1295a160-1d57-588b-a7fa-25ab5a8bdb1f" httpResponseStatus="200" encoding="UTF-8">
+        <con:settings/>
+        <con:script><![CDATA[import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
+import com.eviware.soapui.support.XmlHolder
+import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+
+// Estado del simulador: un archivo JSON dentro del contenedor (se pierde al reiniciarlo).
+def archivo = new File(System.getenv("ARCHIVO_GUIAS") ?: "/tmp/guias-coordinadora.json")
+def leer = { archivo.exists() ? new JsonSlurper().parseText(archivo.getText("UTF-8")) : [consecutivo: 0, recogidas: 0, guias: [:]] }
+def guardar = { datos -> archivo.setText(JsonOutput.toJson(datos), "UTF-8") }
+def ahora = { LocalDateTime.now(ZoneId.of("America/Bogota")).format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")) }
+def fallo = { String mensaje -> "<soapenv:Fault><faultcode>soapenv:Client</faultcode><faultstring>${mensaje}</faultstring></soapenv:Fault>".toString() }
+def solicitud = new XmlHolder(mockRequest.requestContent)
+solicitud.declareNamespace("g", "http://coordinadora.simulada/guias")
+
+def DESCRIPCIONES = ["1": "Guía generada", "2": "Recogida", "3": "En terminal de origen", "4": "En transporte",
+                     "5": "En terminal de destino", "6": "En reparto", "7": "Entregada", "8": "Novedad",
+                     "9": "Devuelta al remitente"]
+synchronized (System) {
+    def datos = leer()
+    def numero = solicitud.getNodeValue("//g:codigoRemision")
+    def guia = datos.guias[numero]
+    if (guia == null) {
+        requestContext.cuerpo = fallo("Remisión no encontrada: ${numero}")
+        return
+    }
+    def codigo = solicitud.getNodeValue("//g:codigoEstado")
+    guia.estados << [codigo: codigo, descripcion: DESCRIPCIONES[codigo] ?: "Estado de prueba sin descripción", fecha: ahora()]
+    guardar(datos)
+    requestContext.cuerpo = "<g:CambiarEstadoGuiaRespuesta><g:resultado>OK</g:resultado></g:CambiarEstadoGuiaRespuesta>"
+}
+]]></con:script>
+        <con:responseContent><![CDATA[<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:g="http://coordinadora.simulada/guias">
+   <soapenv:Header/>
+   <soapenv:Body>${cuerpo}</soapenv:Body>
+</soapenv:Envelope>]]></con:responseContent>
+        <con:wsaConfig mustUnderstand="NONE" version="200508" action="http://coordinadora.simulada/guias/CambiarEstadoGuia"/>
+      </con:response>
+      <con:dispatchConfig/>
+    </con:mockOperation>
+  </con:mockService>
+  <con:properties/>
+  <con:wssContainer/>
+  <con:oAuth2ProfileContainer/>
+  <con:oAuth1ProfileContainer/>
+  <con:sensitiveInformation/>
+</con:soapui-project>

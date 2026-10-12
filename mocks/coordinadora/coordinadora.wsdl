@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Contrato propio de la transportadora Coordinadora SIMULADA (Entrega 3).
+  No es el contrato real de Coordinadora: define un modelo distinto al canónico
+  (peso en gramos, ciudades DIVIPOLA de 8 dígitos, estados numéricos) para
+  demostrar el patrón Data Model Transformation.
+-->
+<wsdl:definitions name="GuiasCoordinadora"
+                  targetNamespace="http://coordinadora.simulada/guias"
+                  xmlns:tns="http://coordinadora.simulada/guias"
+                  xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+                  xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+                  xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+
+  <wsdl:types>
+    <xsd:schema targetNamespace="http://coordinadora.simulada/guias" elementFormDefault="qualified">
+
+      <xsd:complexType name="Pieza">
+        <xsd:sequence>
+          <xsd:element name="pesoGr" type="xsd:int"/>
+          <xsd:element name="largoCm" type="xsd:int"/>
+          <xsd:element name="anchoCm" type="xsd:int"/>
+          <xsd:element name="altoCm" type="xsd:int"/>
+        </xsd:sequence>
+      </xsd:complexType>
+
+      <xsd:complexType name="Destinatario">
+        <xsd:sequence>
+          <xsd:element name="nombre" type="xsd:string"/>
+          <xsd:element name="direccion" type="xsd:string"/>
+          <xsd:element name="telefono" type="xsd:string"/>
+          <xsd:element name="ciudad" type="xsd:string"/>
+        </xsd:sequence>
+      </xsd:complexType>
+
+      <xsd:complexType name="Estado">
+        <xsd:sequence>
+          <xsd:element name="codigo" type="xsd:string"/>
+          <xsd:element name="descripcion" type="xsd:string"/>
+          <xsd:element name="fecha" type="xsd:string"/>
+        </xsd:sequence>
+      </xsd:complexType>
+
+      <xsd:element name="CotizarFlete">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="ciudadOrigen" type="xsd:string"/>
+            <xsd:element name="ciudadDestino" type="xsd:string"/>
+            <xsd:element name="piezas" type="tns:Pieza" maxOccurs="unbounded"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+      <xsd:element name="CotizarFleteRespuesta">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="valorFlete" type="xsd:int"/>
+            <xsd:element name="pesoLiquidadoGr" type="xsd:int"/>
+            <xsd:element name="diasEntrega" type="xsd:int"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="GenerarGuia">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="referencia" type="xsd:string"/>
+            <xsd:element name="ciudadOrigen" type="xsd:string"/>
+            <xsd:element name="destinatario" type="tns:Destinatario"/>
+            <xsd:element name="piezas" type="tns:Pieza" maxOccurs="unbounded"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+      <xsd:element name="GenerarGuiaRespuesta">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="codigoRemision" type="xsd:string"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="ProgramarRecogida">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="codigoRemision" type="xsd:string"/>
+            <xsd:element name="fechaRecogida" type="xsd:string"/>
+            <xsd:element name="franja" type="xsd:string"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+      <xsd:element name="ProgramarRecogidaRespuesta">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="numeroRecogida" type="xsd:string"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="ConsultarEstadoGuia">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="codigoRemision" type="xsd:string"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+      <xsd:element name="ConsultarEstadoGuiaRespuesta">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="codigoRemision" type="xsd:string"/>
+            <xsd:element name="estados" type="tns:Estado" maxOccurs="unbounded"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="CambiarEstadoGuia">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="codigoRemision" type="xsd:string"/>
+            <xsd:element name="codigoEstado" type="xsd:string"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+      <xsd:element name="CambiarEstadoGuiaRespuesta">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="resultado" type="xsd:string"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+    </xsd:schema>
+  </wsdl:types>
+
+  <wsdl:message name="CotizarFleteEntrada"><wsdl:part name="parameters" element="tns:CotizarFlete"/></wsdl:message>
+  <wsdl:message name="CotizarFleteSalida"><wsdl:part name="parameters" element="tns:CotizarFleteRespuesta"/></wsdl:message>
+  <wsdl:message name="GenerarGuiaEntrada"><wsdl:part name="parameters" element="tns:GenerarGuia"/></wsdl:message>
+  <wsdl:message name="GenerarGuiaSalida"><wsdl:part name="parameters" element="tns:GenerarGuiaRespuesta"/></wsdl:message>
+  <wsdl:message name="ProgramarRecogidaEntrada"><wsdl:part name="parameters" element="tns:ProgramarRecogida"/></wsdl:message>
+  <wsdl:message name="ProgramarRecogidaSalida"><wsdl:part name="parameters" element="tns:ProgramarRecogidaRespuesta"/></wsdl:message>
+  <wsdl:message name="ConsultarEstadoGuiaEntrada"><wsdl:part name="parameters" element="tns:ConsultarEstadoGuia"/></wsdl:message>
+  <wsdl:message name="ConsultarEstadoGuiaSalida"><wsdl:part name="parameters" element="tns:ConsultarEstadoGuiaRespuesta"/></wsdl:message>
+  <wsdl:message name="CambiarEstadoGuiaEntrada"><wsdl:part name="parameters" element="tns:CambiarEstadoGuia"/></wsdl:message>
+  <wsdl:message name="CambiarEstadoGuiaSalida"><wsdl:part name="parameters" element="tns:CambiarEstadoGuiaRespuesta"/></wsdl:message>
+
+  <wsdl:portType name="GuiasPortType">
+    <wsdl:operation name="CotizarFlete">
+      <wsdl:input message="tns:CotizarFleteEntrada"/>
+      <wsdl:output message="tns:CotizarFleteSalida"/>
+    </wsdl:operation>
+    <wsdl:operation name="GenerarGuia">
+      <wsdl:input message="tns:GenerarGuiaEntrada"/>
+      <wsdl:output message="tns:GenerarGuiaSalida"/>
+    </wsdl:operation>
+    <wsdl:operation name="ProgramarRecogida">
+      <wsdl:input message="tns:ProgramarRecogidaEntrada"/>
+      <wsdl:output message="tns:ProgramarRecogidaSalida"/>
+    </wsdl:operation>
+    <wsdl:operation name="ConsultarEstadoGuia">
+      <wsdl:input message="tns:ConsultarEstadoGuiaEntrada"/>
+      <wsdl:output message="tns:ConsultarEstadoGuiaSalida"/>
+    </wsdl:operation>
+    <wsdl:operation name="CambiarEstadoGuia">
+      <wsdl:input message="tns:CambiarEstadoGuiaEntrada"/>
+      <wsdl:output message="tns:CambiarEstadoGuiaSalida"/>
+    </wsdl:operation>
+  </wsdl:portType>
+
+  <wsdl:binding name="GuiasBinding" type="tns:GuiasPortType">
+    <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+    <wsdl:operation name="CotizarFlete">
+      <soap:operation soapAction="http://coordinadora.simulada/guias/CotizarFlete"/>
+      <wsdl:input><soap:body use="literal"/></wsdl:input>
+      <wsdl:output><soap:body use="literal"/></wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GenerarGuia">
+      <soap:operation soapAction="http://coordinadora.simulada/guias/GenerarGuia"/>
+      <wsdl:input><soap:body use="literal"/></wsdl:input>
+      <wsdl:output><soap:body use="literal"/></wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="ProgramarRecogida">
+      <soap:operation soapAction="http://coordinadora.simulada/guias/ProgramarRecogida"/>
+      <wsdl:input><soap:body use="literal"/></wsdl:input>
+      <wsdl:output><soap:body use="literal"/></wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="ConsultarEstadoGuia">
+      <soap:operation soapAction="http://coordinadora.simulada/guias/ConsultarEstadoGuia"/>
+      <wsdl:input><soap:body use="literal"/></wsdl:input>
+      <wsdl:output><soap:body use="literal"/></wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="CambiarEstadoGuia">
+      <soap:operation soapAction="http://coordinadora.simulada/guias/CambiarEstadoGuia"/>
+      <wsdl:input><soap:body use="literal"/></wsdl:input>
+      <wsdl:output><soap:body use="literal"/></wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+
+  <wsdl:service name="GuiasService">
+    <wsdl:port name="GuiasPort" binding="tns:GuiasBinding">
+      <soap:address location="http://localhost:8088/ws/guias"/>
+    </wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>
