@@ -96,3 +96,16 @@ def test_programar_recogida(cliente):
 
 def test_guia_desconocida_es_404(cliente):
     assert cliente.get("/mydhlapi/shipments/0000000000/tracking").status_code == 404
+
+
+def test_los_numeros_de_guia_no_se_repiten_entre_reinicios(monkeypatch):
+    import time
+
+    from mock_dhl.almacen import Almacen
+
+    primero = Almacen().crear("PED-1", "BOG", "MDE").numero
+    reloj = time.time()
+    monkeypatch.setattr(time, "time", lambda: reloj + 60)  # el simulador se reinicia un minuto después
+    segundo = Almacen().crear("PED-2", "BOG", "MDE").numero
+    assert primero != segundo
+    assert len(segundo) == 10 and segundo.startswith("53")

@@ -114,3 +114,30 @@ def test_si_el_bus_falla_solo_se_reintenta_la_publicacion(orquestador, sit, bus)
     assert despacho.estado == EstadoDespacho.RECOGIDA_PROGRAMADA
     assert sit.nombres() == ["cotizar", "crear_envio", "programar_recogida"]
     assert len(bus.publicados) == 1
+
+
+def test_dos_solicitudes_simultaneas_del_mismo_pedido_no_duplican(orquestador, sit, bus):
+    import threading
+    import time
+
+    entro, soltar = threading.Event(), threading.Event()
+    cotizar_original = sit.cotizar
+
+    def cotizar_lento(solicitud):
+        entro.set()
+        soltar.wait(5)
+        return cotizar_original(solicitud)
+
+    sit.cotizar = cotizar_lento
+    resultados = []
+    hilos = [threading.Thread(target=lambda: resultados.append(orquestador.procesar(_pedido()))) for _ in range(2)]
+    hilos[0].start()
+    entro.wait(5)
+    hilos[1].start()  # p. ej. el evento y un POST del mismo pedido, o un doble clic
+    time.sleep(0.3)
+    soltar.set()
+    for hilo in hilos:
+        hilo.join(10)
+    assert sit.nombres() == ["cotizar", "crear_envio", "programar_recogida"]
+    assert len(bus.publicados) == 1
+    assert sorted(creado for _, creado in resultados) == [False, True]

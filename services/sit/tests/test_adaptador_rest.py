@@ -75,3 +75,11 @@ def test_un_4xx_no_se_reintenta_ni_se_reenvia_el_error_crudo():
     assert len(llamadas) == 1
     assert exc.value.error.codigo == "TRANSPORTADORA_RECHAZO"
     assert "PEI" not in exc.value.error.mensaje
+
+
+def test_una_respuesta_2xx_que_no_es_json_es_rechazo_canonico():
+    with pytest.raises(ErrorPlataforma) as exc:
+        _adaptador(lambda request: httpx.Response(200, text="<html>proxy</html>")).enviar(
+            MensajeOperador("POST /rates", {}))
+    assert exc.value.estado_http == 502
+    assert exc.value.error.codigo == "TRANSPORTADORA_RECHAZO"

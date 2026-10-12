@@ -10,6 +10,13 @@ from sit.motor.tipos import EstadoLeido, MensajeOperador
 FRANJA = {Franja.MANANA: "AM", Franja.TARDE: "PM"}
 
 
+def _texto(respuesta, campo: str) -> str:
+    """zeep entrega None o texto vacío si el operador responde sin el elemento: eso no es un número válido."""
+    if respuesta is None or not str(respuesta).strip():
+        raise ValueError(f"La respuesta no trae {campo}")
+    return str(respuesta)
+
+
 class MapeadorCoordinadora:
     codigo = "coordinadora"
 
@@ -48,7 +55,8 @@ class MapeadorCoordinadora:
 
     def leer_guia(self, respuesta: str, solicitud: SolicitudEnvio) -> Guia:
         # GenerarGuiaRespuesta tiene un solo elemento (codigoRemision): zeep lo entrega como texto.
-        return Guia(numero_guia=str(respuesta), transportadora=self.codigo, pedido_id=solicitud.pedido_id,
+        return Guia(numero_guia=_texto(respuesta, "codigoRemision"), transportadora=self.codigo,
+                    pedido_id=solicitud.pedido_id,
                     estado=EstadoEnvio.CREADA, creada_en=ahora())
 
     def recogida(self, solicitud: SolicitudRecogida) -> MensajeOperador:
@@ -57,7 +65,8 @@ class MapeadorCoordinadora:
                                                       "franja": FRANJA[solicitud.franja]})
 
     def leer_recogida(self, respuesta: str, solicitud: SolicitudRecogida) -> Recogida:
-        return Recogida(numero_guia=solicitud.numero_guia, transportadora=self.codigo, confirmacion=str(respuesta),
+        return Recogida(numero_guia=solicitud.numero_guia, transportadora=self.codigo,
+                        confirmacion=_texto(respuesta, "numeroRecogida"),
                         fecha=solicitud.fecha, franja=solicitud.franja)
 
     def consulta_estados(self, numero_guia: str) -> MensajeOperador:

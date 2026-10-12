@@ -4,6 +4,7 @@ Los pasos tienen un orden obligatorio y un servicio controlador centraliza la l�
 su resultado: un nuevo intento retoma desde el primer paso sin resultado, sin duplicar guías ni recogidas.
 """
 import logging
+import threading
 from collections.abc import Callable
 from datetime import date, timedelta
 
@@ -40,9 +41,17 @@ class Orquestador:
         self._bus = bus
         self._origen = origen
         self._hoy = hoy
+        self._candados: dict[str, threading.Lock] = {}
+        self._candado_candados = threading.Lock()
+
+    def _candado(self, pedido_id: str) -> threading.Lock:
+        with self._candado_candados:
+            return self._candados.setdefault(pedido_id, threading.Lock())
 
     def procesar(self, pedido: PedidoConfirmado) -> tuple[Despacho, bool]:
-        with self._Sesiones() as sesion:
+        # Un pedido a la vez: el evento y un POST (o un doble clic) del mismo pedido no duplican guías.
+        # Basta un candado en memoria porque Despachos corre como una sola instancia en el prototipo.
+        with self._candado(pedido.pedido_id), self._Sesiones() as sesion:
             despacho, creado = self._obtener_o_crear(sesion, pedido)
             if despacho.estado != EstadoDespacho.RECOGIDA_PROGRAMADA.value:
                 try:

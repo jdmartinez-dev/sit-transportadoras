@@ -9,7 +9,7 @@ from typing import Any
 import requests
 from lxml import etree
 from zeep import Client, Plugin
-from zeep.exceptions import Fault, TransportError
+from zeep.exceptions import Error as ErrorZeep, Fault, TransportError
 from zeep.helpers import serialize_object
 from zeep.transports import Transport
 
@@ -68,6 +68,11 @@ class AdaptadorSOAP:
                                       f"({mensaje.operacion})", self._transportadora) from exc
             except (requests.RequestException, TransportError) as exc:
                 motivo = exc.__class__.__name__
+            except ErrorZeep as exc:  # XML o WSDL que no corresponde al contrato: no se arregla reintentando
+                log.warning("[%s] respuesta SOAP inesperada en %s: %s", self._transportadora, mensaje.operacion, exc)
+                raise ErrorPlataforma(502, "TRANSPORTADORA_RECHAZO",
+                                      f"Respuesta inesperada de la transportadora {self._transportadora} "
+                                      f"({mensaje.operacion})", self._transportadora) from exc
             if intento < self._reintentos:
                 log.warning("[%s] intento %s fallido (%s); se reintenta", self._transportadora, intento, motivo)
                 self._dormir(ESPERAS[min(intento - 1, len(ESPERAS) - 1)])

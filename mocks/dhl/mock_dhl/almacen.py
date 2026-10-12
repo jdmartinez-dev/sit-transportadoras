@@ -1,6 +1,7 @@
 """Envíos del DHL simulado, en memoria (se pierden al reiniciar el contenedor)."""
 import itertools
 import threading
+import time
 from dataclasses import dataclass, field
 
 
@@ -16,13 +17,15 @@ class EnvioDHL:
 class Almacen:
     def __init__(self):
         self._envios: dict[str, EnvioDHL] = {}
-        self._consecutivo = itertools.count(1)
+        # El consecutivo arranca en un valor que depende de la hora de arranque: si el contenedor se reinicia
+        # sin borrar la base de la plataforma, los números nuevos no repiten los anteriores.
+        self._consecutivo = itertools.count((int(time.time()) % 1_000_000) * 100 + 1)
         self._recogidas = itertools.count(1)
         self._candado = threading.Lock()
 
     def crear(self, referencia: str, origen: str, destino: str) -> EnvioDHL:
         with self._candado:
-            numero = f"53{next(self._consecutivo):08d}"  # 10 dígitos
+            numero = f"53{next(self._consecutivo) % 100_000_000:08d}"  # 10 dígitos
             envio = EnvioDHL(numero, referencia, origen, destino)
             self._envios[numero] = envio
             return envio

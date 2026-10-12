@@ -1,6 +1,7 @@
 synchronized (System) {
     def datos = leer()
-    datos.consecutivo = (datos.consecutivo ?: 0) + 1
+    // Si el contenedor se reinició, el consecutivo arranca según la hora: no repite números ya entregados.
+    datos.consecutivo = (datos.consecutivo ?: (System.currentTimeMillis().intdiv(1000L) % 100000000L) * 1000L) + 1
     def numero = String.format("9%011d", datos.consecutivo as long)
     datos.guias[numero] = [
         referencia   : solicitud.getNodeValue("//g:referencia"),

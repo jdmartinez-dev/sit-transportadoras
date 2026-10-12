@@ -106,3 +106,13 @@ def test_wsdl_inalcanzable_no_queda_en_cache_y_se_recupera():
         adaptador.enviar(COTIZAR)
     assert exc.value.error.codigo == "TRANSPORTADORA_SIN_RESPUESTA"
     assert adaptador.enviar(COTIZAR)["diasEntrega"] == 3
+
+
+def test_un_xml_inesperado_es_rechazo_canonico_sin_reintentos():
+    esperas = []
+    raro = SOBRE.format("<g:CotizarFleteRespuesta><g:inesperado>1</g:inesperado></g:CotizarFleteRespuesta>")
+    with pytest.raises(ErrorPlataforma) as exc:
+        _adaptador(TransporteFalso([raro]), esperas).enviar(COTIZAR)
+    assert exc.value.estado_http == 502
+    assert exc.value.error.codigo == "TRANSPORTADORA_RECHAZO"
+    assert esperas == []

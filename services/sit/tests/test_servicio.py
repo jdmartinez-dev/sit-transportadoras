@@ -181,3 +181,20 @@ def test_si_el_bus_falla_el_estado_se_vuelve_a_intentar(entorno):
     entorno.bus.falla = None
     entorno.servicio.procesar_webhook("dhl", _webhook("PU"))
     assert _estados_publicados(entorno.bus) == ["RECOGIDA"]
+
+
+def test_un_numero_reutilizado_por_el_operador_reinicia_el_seguimiento(entorno):
+    entorno.servicio.crear_guia(_envio("coordinadora", pedido="PED-1"))
+    responder = entorno.adaptadores["coordinadora"].responder
+    responder.estados["900000000001"].append({"codigo": "6", "descripcion": "En reparto",
+                                              "fecha": "2026-10-12T15:00:00"})
+    entorno.servicio.sincronizar("coordinadora")
+    # El simulador se reinició sin borrar la base del SIT y vuelve a entregar el mismo número para otro pedido.
+    responder.estados["900000000001"] = [{"codigo": "1", "descripcion": "Guía generada",
+                                          "fecha": "2026-10-13T09:00:00"}]
+    entorno.servicio.crear_guia(_envio("coordinadora", pedido="PED-2"))
+    with entorno.Sesiones() as sesion:
+        fila = sesion.get(GuiaBD, "900000000001")
+    assert (fila.pedido_id, fila.ultimo_estado, fila.eventos_leidos) == ("PED-2", None, 0)
+    entorno.servicio.sincronizar("coordinadora")
+    assert _estados_publicados(entorno.bus) == ["CREADA", "EN_REPARTO", "CREADA"]

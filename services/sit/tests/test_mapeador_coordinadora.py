@@ -70,3 +70,13 @@ def test_historial_de_estados_numericos_con_fecha_local():
 def test_coordinadora_no_tiene_webhook_y_el_registro_tiene_ambos_mapeadores():
     assert not hasattr(mapeador, "leer_webhook")
     assert set(MAPEADORES) == {"dhl", "coordinadora"}
+
+
+def test_una_respuesta_vacia_no_produce_una_guia_none():
+    import pytest
+
+    with pytest.raises(ValueError):
+        mapeador.leer_guia(None, SOLICITUD_ENVIO)
+    with pytest.raises(ValueError):
+        mapeador.leer_recogida("", SolicitudRecogida(numero_guia="900000000001", fecha=date(2026, 10, 12),
+                                                     franja=Franja.MANANA))

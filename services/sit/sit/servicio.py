@@ -150,6 +150,14 @@ class ServicioSIT:
                     sesion.add(GuiaBD(numero=numero_guia, transportadora=codigo, pedido_id=pedido_id,
                                       ultimo_estado=None, eventos_leidos=0, creada_en=momento,
                                       actualizada_en=momento))
+                elif pedido_id and guia.pedido_id and guia.pedido_id != pedido_id:
+                    # El operador reutilizó el número (p. ej. un simulador reiniciado): es otro envío.
+                    log.warning("La guía %s de %s llega para el pedido %s y antes era del %s; se reinicia su "
+                                "seguimiento", numero_guia, codigo, pedido_id, guia.pedido_id)
+                    guia.pedido_id = pedido_id
+                    guia.ultimo_estado = None
+                    guia.eventos_leidos = 0
+                    guia.creada_en = guia.actualizada_en = ahora()
                 elif pedido_id and not guia.pedido_id:
                     guia.pedido_id = pedido_id
                 try:

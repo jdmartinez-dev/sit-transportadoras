@@ -36,7 +36,14 @@ class AdaptadorREST:
                 motivo = f"sin conexión ({exc.__class__.__name__})"
             else:
                 if respuesta.status_code < 400:
-                    datos = respuesta.json()
+                    try:
+                        datos = respuesta.json()
+                    except ValueError as exc:
+                        log.warning("[%s] respuesta %s que no es JSON: %s", self._transportadora,
+                                    respuesta.status_code, respuesta.text[:200])
+                        raise ErrorPlataforma(502, "TRANSPORTADORA_RECHAZO",
+                                              f"Respuesta inesperada de la transportadora {self._transportadora}",
+                                              self._transportadora) from exc
                     log.info("[%s] JSON recibido: %s", self._transportadora, json.dumps(datos, ensure_ascii=False))
                     return datos
                 if respuesta.status_code < 500:
