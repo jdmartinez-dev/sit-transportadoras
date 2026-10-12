@@ -1,0 +1,168 @@
+{
+  "info": {
+    "name": "Entrega 3 - Plataforma de despachos",
+    "description": "Guion de la demo (sección 15 de la especificación). Antes: docker compose up -d, llenar la variable 'password' del entorno con secrets/usuarios_demo_password y ejecutar scripts/publicar-pedido.sh PED-1002 coordinadora antes del paso 3.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Tokens",
+      "item": [
+        {
+          "name": "Token agente1 (agente de servicio)",
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));",
+            "pm.environment.set('token_agente', pm.response.json().access_token);"]}}],
+          "request": {"method": "POST", "header": [],
+            "body": {"mode": "urlencoded", "urlencoded": [
+              {"key": "grant_type", "value": "password"}, {"key": "username", "value": "agente1"},
+              {"key": "password", "value": "{{password}}"}]},
+            "url": "{{auth_url}}/oauth/token"}
+        },
+        {
+          "name": "Token operador1 (operador logístico)",
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));",
+            "pm.environment.set('token_operador', pm.response.json().access_token);"]}}],
+          "request": {"method": "POST", "header": [],
+            "body": {"mode": "urlencoded", "urlencoded": [
+              {"key": "grant_type", "value": "password"}, {"key": "username", "value": "operador1"},
+              {"key": "password", "value": "{{password}}"}]},
+            "url": "{{auth_url}}/oauth/token"}
+        },
+        {
+          "name": "Token admin1 (administrador de integraciones)",
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));",
+            "pm.environment.set('token_admin', pm.response.json().access_token);"]}}],
+          "request": {"method": "POST", "header": [],
+            "body": {"mode": "urlencoded", "urlencoded": [
+              {"key": "grant_type", "value": "password"}, {"key": "username", "value": "admin1"},
+              {"key": "password", "value": "{{password}}"}]},
+            "url": "{{auth_url}}/oauth/token"}
+        },
+        {
+          "name": "Token cliente1 (cliente)",
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));",
+            "pm.environment.set('token_cliente', pm.response.json().access_token);"]}}],
+          "request": {"method": "POST", "header": [],
+            "body": {"mode": "urlencoded", "urlencoded": [
+              {"key": "grant_type", "value": "password"}, {"key": "username", "value": "cliente1"},
+              {"key": "password", "value": "{{password}}"}]},
+            "url": "{{auth_url}}/oauth/token"}
+        }
+      ]
+    },
+    {
+      "name": "2. Pedido A forzando DHL (POST /api/v1/despachos)",
+      "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": [
+        "pm.test('201 o 200', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+        "const d = pm.response.json();",
+        "pm.test('Guía DHL creada y recogida programada', () => { pm.expect(d.transportadora).to.eql('dhl'); pm.expect(d.estado).to.eql('RECOGIDA_PROGRAMADA'); });",
+        "pm.environment.set('guia_dhl', d.numero_guia);"]}}],
+      "request": {"method": "POST",
+        "header": [{"key": "Authorization", "value": "Bearer {{token_agente}}"}, {"key": "Content-Type", "value": "application/json"}],
+        "body": {"mode": "raw", "raw": "{\n  \"pedido_id\": \"PED-1001\",\n  \"transportadora\": \"dhl\",\n  \"destino\": {\"divipola\": \"05001\", \"direccion\": \"Carrera 43A # 1-50\", \"nombre\": \"Ana Pérez\", \"telefono\": \"3001234567\"},\n  \"paquetes\": [{\"peso_kg\": 2.0, \"largo_cm\": 30, \"ancho_cm\": 20, \"alto_cm\": 10}]\n}", "options": {"raw": {"language": "json"}}},
+        "url": "{{despachos_url}}/api/v1/despachos"}
+    },
+    {
+      "name": "3. Pedido B (Coordinadora) publicado por evento",
+      "event": [
+        {"listen": "prerequest", "script": {"type": "text/javascript", "exec": ["// Antes: scripts/publicar-pedido.sh PED-1002 coordinadora", "setTimeout(() => {}, 3000);"]}},
+        {"listen": "test", "script": {"type": "text/javascript", "exec": [
+          "pm.test('200 OK', () => pm.response.to.have.status(200));",
+          "const d = pm.response.json();",
+          "pm.test('Guía de Coordinadora en el mismo formato canónico', () => { pm.expect(d.transportadora).to.eql('coordinadora'); pm.expect(d.estado).to.eql('RECOGIDA_PROGRAMADA'); });",
+          "pm.environment.set('guia_coordinadora', d.numero_guia);"]}}],
+      "request": {"method": "GET", "header": [{"key": "Authorization", "value": "Bearer {{token_agente}}"}],
+        "url": "{{despachos_url}}/api/v1/despachos/PED-1002"}
+    },
+    {
+      "name": "4. Comparar: despacho A (mismo formato que B)",
+      "request": {"method": "GET", "header": [{"key": "Authorization", "value": "Bearer {{token_agente}}"}],
+        "url": "{{despachos_url}}/api/v1/despachos/PED-1001"}
+    },
+    {
+      "name": "5. Pedido C sin forzar (elige la más barata)",
+      "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": [
+        "const d = pm.response.json();",
+        "const masBarata = d.cotizaciones.reduce((a, b) => a.valor_cop <= b.valor_cop ? a : b);",
+        "pm.test('Dos cotizaciones comparables en COP y kg', () => pm.expect(d.cotizaciones.length).to.eql(2));",
+        "pm.test('Eligió la más barata', () => pm.expect(d.transportadora).to.eql(masBarata.transportadora));"]}}],
+      "request": {"method": "POST",
+        "header": [{"key": "Authorization", "value": "Bearer {{token_agente}}"}, {"key": "Content-Type", "value": "application/json"}],
+        "body": {"mode": "raw", "raw": "{\n  \"pedido_id\": \"PED-1003\",\n  \"destino\": {\"divipola\": \"05001\", \"direccion\": \"Carrera 43A # 1-50\", \"nombre\": \"Ana Pérez\", \"telefono\": \"3001234567\"},\n  \"paquetes\": [{\"peso_kg\": 2.0, \"largo_cm\": 30, \"ancho_cm\": 20, \"alto_cm\": 10}]\n}", "options": {"raw": {"language": "json"}}},
+        "url": "{{despachos_url}}/api/v1/despachos"}
+    },
+    {
+      "name": "6. DHL: cambiar estado a PU (el simulador avisa al SIT por webhook)",
+      "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {"mode": "raw", "raw": "{\"typeCode\": \"PU\"}", "options": {"raw": {"language": "json"}}},
+        "url": "{{dhl_url}}/demo/envios/{{guia_dhl}}/estado"}
+    },
+    {
+      "name": "6b. Rastreo de la guía DHL (RECOGIDA)",
+      "event": [
+        {"listen": "prerequest", "script": {"type": "text/javascript", "exec": ["setTimeout(() => {}, 2000);"]}},
+        {"listen": "test", "script": {"type": "text/javascript", "exec": [
+          "pm.test('Estado canónico RECOGIDA', () => pm.expect(pm.response.json().estado_actual).to.eql('RECOGIDA'));"]}}],
+      "request": {"method": "GET", "header": [{"key": "Authorization", "value": "Bearer {{token_cliente}}"}],
+        "url": "{{rastreo_url}}/api/v1/rastreo/{{guia_dhl}}"}
+    },
+    {
+      "name": "7. Coordinadora: CambiarEstadoGuia a 6 (SOAP)",
+      "request": {"method": "POST",
+        "header": [{"key": "Content-Type", "value": "text/xml; charset=utf-8"}, {"key": "SOAPAction", "value": "\"http://coordinadora.simulada/guias/CambiarEstadoGuia\""}],
+        "body": {"mode": "raw", "raw": "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:g=\"http://coordinadora.simulada/guias\">\n  <soapenv:Body>\n    <g:CambiarEstadoGuia>\n      <g:codigoRemision>{{guia_coordinadora}}</g:codigoRemision>\n      <g:codigoEstado>6</g:codigoEstado>\n    </g:CambiarEstadoGuia>\n  </soapenv:Body>\n</soapenv:Envelope>", "options": {"raw": {"language": "xml"}}},
+        "url": "{{coordinadora_url}}"}
+    },
+    {
+      "name": "7b. Rastreo de la guía Coordinadora (EN_REPARTO, tras la consulta programada)",
+      "event": [
+        {"listen": "prerequest", "script": {"type": "text/javascript", "exec": ["setTimeout(() => {}, 11000);"]}},
+        {"listen": "test", "script": {"type": "text/javascript", "exec": [
+          "pm.test('Estado canónico EN_REPARTO', () => pm.expect(pm.response.json().estado_actual).to.eql('EN_REPARTO'));"]}}],
+      "request": {"method": "GET", "header": [{"key": "Authorization", "value": "Bearer {{token_agente}}"}],
+        "url": "{{rastreo_url}}/api/v1/rastreo/{{guia_coordinadora}}"}
+    },
+    {
+      "name": "8. DHL: código sin equivalencia XX",
+      "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {"mode": "raw", "raw": "{\"typeCode\": \"XX\"}", "options": {"raw": {"language": "json"}}},
+        "url": "{{dhl_url}}/demo/envios/{{guia_dhl}}/estado"}
+    },
+    {
+      "name": "8b. Rastreo: el código XX llega como NOVEDAD",
+      "event": [
+        {"listen": "prerequest", "script": {"type": "text/javascript", "exec": ["setTimeout(() => {}, 2000);"]}},
+        {"listen": "test", "script": {"type": "text/javascript", "exec": [
+          "pm.test('Estado canónico NOVEDAD', () => pm.expect(pm.response.json().estado_actual).to.eql('NOVEDAD'));"]}}],
+      "request": {"method": "GET", "header": [{"key": "Authorization", "value": "Bearer {{token_agente}}"}],
+        "url": "{{rastreo_url}}/api/v1/rastreo/{{guia_dhl}}"}
+    },
+    {
+      "name": "9. SIT: estados en vivo de la guía de Coordinadora (operador)",
+      "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": [
+        "pm.test('200 OK', () => pm.response.to.have.status(200));"]}}],
+      "request": {"method": "GET", "header": [{"key": "Authorization", "value": "Bearer {{token_operador}}"}],
+        "url": "{{sit_url}}/api/v1/envios/{{guia_coordinadora}}/estados"}
+    },
+    {
+      "name": "10. SIT: catálogo de transportadoras (administrador)",
+      "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": [
+        "pm.test('Dos transportadoras', () => pm.expect(pm.response.json().length).to.eql(2));"]}}],
+      "request": {"method": "GET", "header": [{"key": "Authorization", "value": "Bearer {{token_admin}}"}],
+        "url": "{{sit_url}}/api/v1/transportadoras"}
+    },
+    {
+      "name": "11. Seguridad: un cliente no puede despachar (403)",
+      "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": [
+        "pm.test('403 Forbidden', () => pm.response.to.have.status(403));"]}}],
+      "request": {"method": "POST",
+        "header": [{"key": "Authorization", "value": "Bearer {{token_cliente}}"}, {"key": "Content-Type", "value": "application/json"}],
+        "body": {"mode": "raw", "raw": "{\n  \"pedido_id\": \"PED-1004\",\n  \"destino\": {\"divipola\": \"05001\", \"direccion\": \"Carrera 43A # 1-50\", \"nombre\": \"Ana Pérez\", \"telefono\": \"3001234567\"},\n  \"paquetes\": [{\"peso_kg\": 2.0, \"largo_cm\": 30, \"ancho_cm\": 20, \"alto_cm\": 10}]\n}", "options": {"raw": {"language": "json"}}},
+        "url": "{{despachos_url}}/api/v1/despachos"}
+    }
+  ]
+}
