@@ -4,6 +4,7 @@
 -r services/auth/requirements.txt
 -r mocks/dhl/requirements.txt
 -r services/sit/requirements.txt
+-r services/despachos/requirements.txt
 pytest==8.3.4
 httpx==0.28.1
 fakeredis==2.26.2
