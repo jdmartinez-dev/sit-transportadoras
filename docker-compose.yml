@@ -1,0 +1,120 @@
+name: plataforma-despachos
+
+x-servicio-python: &servicio-python
+  restart: unless-stopped
+  healthcheck:
+    test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/salud', timeout=3).status == 200 else 1)"]
+    interval: 5s
+    timeout: 5s
+    retries: 24
+    start_period: 10s
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: plataforma
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+    secrets: [postgres_password]
+    volumes:
+      - ./infra/postgres/01-bases.sql:/docker-entrypoint-initdb.d/01-bases.sql:ro
+      - datos-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U plataforma"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  auth:
+    <<: *servicio-python
+    build: {context: ., dockerfile: services/auth/Dockerfile}
+    ports: ["8000:8000"]
+    environment:
+      BD_HOST: postgres
+    secrets: [postgres_password, jwt_privada, cliente_despachos_secret, cliente_mock_dhl_secret, usuarios_demo_password]
+    depends_on:
+      postgres: {condition: service_healthy}
+
+  sit:
+    <<: *servicio-python
+    build: {context: ., dockerfile: services/sit/Dockerfile}
+    ports: ["8010:8000"]
+    environment:
+      BD_HOST: postgres
+      URL_REDIS: redis://redis:6379/0
+      USUARIO_DHL: tienda
+    secrets: [postgres_password, jwt_publica, dhl_api_password]
+    depends_on:
+      postgres: {condition: service_healthy}
+      redis: {condition: service_healthy}
+
+  despachos:
+    <<: *servicio-python
+    build: {context: ., dockerfile: services/despachos/Dockerfile}
+    ports: ["8020:8000"]
+    environment:
+      BD_HOST: postgres
+      URL_REDIS: redis://redis:6379/0
+      URL_SIT: http://sit:8000
+      URL_TOKEN: http://auth:8000/oauth/token
+    secrets: [postgres_password, jwt_publica, cliente_despachos_secret]
+    depends_on:
+      postgres: {condition: service_healthy}
+      redis: {condition: service_healthy}
+      auth: {condition: service_healthy}
+      sit: {condition: service_healthy}
+
+  rastreo:
+    <<: *servicio-python
+    build: {context: ., dockerfile: services/rastreo/Dockerfile}
+    ports: ["8030:8000"]
+    environment:
+      BD_HOST: postgres
+      URL_REDIS: redis://redis:6379/0
+    secrets: [postgres_password, jwt_publica]
+    depends_on:
+      postgres: {condition: service_healthy}
+      redis: {condition: service_healthy}
+
+  mock-dhl:
+    <<: *servicio-python
+    build: {context: ., dockerfile: mocks/dhl/Dockerfile}
+    ports: ["8082:8000"]
+    environment:
+      USUARIO_API: tienda
+      URL_WEBHOOK: http://sit:8000/api/v1/webhooks/dhl
+      URL_TOKEN: http://auth:8000/oauth/token
+    secrets: [dhl_api_password, cliente_mock_dhl_secret]
+    depends_on:
+      auth: {condition: service_healthy}
+
+  mock-coordinadora:
+    build: {context: ., dockerfile: mocks/coordinadora/Dockerfile}
+    ports: ["8088:8088"]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "-o", "/dev/null", "http://localhost:8088/ws/guias?WSDL"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 15s
+
+secrets:
+  postgres_password: {file: ./secrets/postgres_password}
+  jwt_privada: {file: ./secrets/jwt_privada}
+  jwt_publica: {file: ./secrets/jwt_publica}
+  dhl_api_password: {file: ./secrets/dhl_api_password}
+  cliente_despachos_secret: {file: ./secrets/cliente_despachos_secret}
+  cliente_mock_dhl_secret: {file: ./secrets/cliente_mock_dhl_secret}
+  usuarios_demo_password: {file: ./secrets/usuarios_demo_password}
+
+volumes:
+  datos-postgres:
