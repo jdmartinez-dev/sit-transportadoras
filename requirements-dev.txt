@@ -1,3 +1,5 @@
 # Entorno de desarrollo y pruebas (Python 3.12):
 #   uv venv -p 3.12 .venv && uv pip install --python .venv/bin/python -r requirements-dev.txt
+-e ./shared
 pytest==8.3.4
+httpx==0.28.1

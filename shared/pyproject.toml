@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "comun"
+version = "1.0.0"
+description = "Modelo canónico, eventos, seguridad y utilidades compartidas por los servicios de la plataforma de despachos"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi==0.115.6",
+    "pydantic==2.10.4",
+    "pydantic-settings==2.7.0",
+    "SQLAlchemy==2.0.36",
+    "redis==5.2.1",
+    "PyJWT[crypto]==2.10.1",
+    "cryptography==44.0.0",
+]
+
+[tool.setuptools]
+packages = ["comun"]
