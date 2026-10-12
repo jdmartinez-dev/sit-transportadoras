@@ -15,26 +15,39 @@ from zeep.transports import Transport
 
 from comun.errores import ErrorPlataforma
 from sit.motor.tipos import MensajeOperador
+from sit.adaptadores.redaccion import redactar_xml
 
 log = logging.getLogger(__name__)
 ESPERAS = (0.5, 1.0)
 
 
+
 class BitacoraXML(Plugin):
-    """Registra el XML enviado y recibido: evidencia del formato propio del operador."""
+    """Registra XML SOAP ocultando información sensible."""
 
     def __init__(self, transportadora: str):
         self._transportadora = transportadora
 
     def egress(self, envelope, http_headers, operation, binding_options):
-        log.info("[%s] XML enviado (%s):\n%s", self._transportadora, operation.name,
-                 etree.tostring(envelope, pretty_print=True, encoding="unicode"))
+        log.info(
+            "[%s] XML enviado (%s):\n%s",
+            self._transportadora,
+            operation.name,
+            redactar_xml(envelope),
+        )
+
         return envelope, http_headers
 
     def ingress(self, envelope, http_headers, operation):
-        log.info("[%s] XML recibido (%s):\n%s", self._transportadora, operation.name,
-                 etree.tostring(envelope, pretty_print=True, encoding="unicode"))
+        log.info(
+            "[%s] XML recibido (%s):\n%s",
+            self._transportadora,
+            operation.name,
+            redactar_xml(envelope),
+        )
+
         return envelope, http_headers
+
 
 
 class AdaptadorSOAP:

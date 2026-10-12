@@ -6,6 +6,7 @@ from typing import Any
 
 import httpx
 
+from sit.adaptadores.redaccion import redactar_json
 from comun.errores import ErrorPlataforma
 from sit.motor.tipos import MensajeOperador
 
@@ -28,7 +29,7 @@ class AdaptadorREST:
         metodo, ruta = mensaje.operacion.split(" ", 1)
         cuerpo = None if metodo == "GET" else mensaje.cuerpo
         log.info("[%s] %s %s — JSON enviado: %s", self._transportadora, metodo, ruta,
-                 json.dumps(cuerpo, ensure_ascii=False))
+                 json.dumps(redactar_json(cuerpo), ensure_ascii=False))
         for intento in range(1, self._reintentos + 1):
             try:
                 respuesta = self._http.request(metodo, self._endpoint + ruta, json=cuerpo, auth=self._credenciales)
@@ -39,16 +40,14 @@ class AdaptadorREST:
                     try:
                         datos = respuesta.json()
                     except ValueError as exc:
-                        log.warning("[%s] respuesta %s que no es JSON: %s", self._transportadora,
-                                    respuesta.status_code, respuesta.text[:200])
+                        log.warning("[%s] respuesta HTTP %s con formato JSON inválido",self._transportadora,respuesta.status_code)
                         raise ErrorPlataforma(502, "TRANSPORTADORA_RECHAZO",
                                               f"Respuesta inesperada de la transportadora {self._transportadora}",
                                               self._transportadora) from exc
-                    log.info("[%s] JSON recibido: %s", self._transportadora, json.dumps(datos, ensure_ascii=False))
+                    log.info("[%s] JSON recibido: %s", self._transportadora, json.dumps(redactar_json(datos), ensure_ascii=False))
                     return datos
                 if respuesta.status_code < 500:
-                    log.warning("[%s] rechazo HTTP %s: %s", self._transportadora, respuesta.status_code,
-                                respuesta.text)
+                    log.warning("[%s] rechazo HTTP %s", self._transportadora, respuesta.status_code)
                     raise ErrorPlataforma(502, "TRANSPORTADORA_RECHAZO",
                                           f"La transportadora {self._transportadora} rechazó la solicitud "
                                           f"(HTTP {respuesta.status_code})", self._transportadora)
