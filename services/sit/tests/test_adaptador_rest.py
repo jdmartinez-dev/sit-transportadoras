@@ -83,3 +83,102 @@ def test_una_respuesta_2xx_que_no_es_json_es_rechazo_canonico():
             MensajeOperador("POST /rates", {}))
     assert exc.value.estado_http == 502
     assert exc.value.error.codigo == "TRANSPORTADORA_RECHAZO"
+
+def test_no_expone_datos_personales_en_logs(caplog):
+    datos_personales = {
+        "receiver": {
+            "name": "Ana Perez",
+            "phone": "3001234567",
+            "address": "Calle 123"
+        },
+        "reference": "PED-1001"
+    }
+
+    def manejar(request):
+        return httpx.Response(
+            201,
+            json={"shipmentTrackingNumber": "5300000001"}
+        )
+
+    with caplog.at_level("INFO", logger="sit.adaptadores.rest"):
+        _adaptador(manejar).enviar(
+            MensajeOperador("POST /shipments", datos_personales)
+        )
+
+    registros = caplog.text
+
+    assert "Ana Perez" not in registros
+    assert "3001234567" not in registros
+    assert "Calle 123" not in registros
+
+    # Debemos conservar información técnica útil.
+    assert "PED-1001" in registros
+
+
+def test_no_expone_datos_personales_en_respuesta(caplog):
+    def manejar(request):
+        return httpx.Response(
+            201,
+            json={
+                "shipmentTrackingNumber": "5300000001",
+                "receiver": {
+                    "name": "Ana Perez",
+                    "phone": "3001234567",
+                },
+            },
+        )
+
+    with caplog.at_level("INFO", logger="sit.adaptadores.rest"):
+        _adaptador(manejar).enviar(
+            MensajeOperador(
+                "POST /shipments",
+                {"reference": "PED-1001"},
+            )
+        )
+
+    registros = caplog.text
+
+    assert "Ana Perez" not in registros
+    assert "3001234567" not in registros
+    assert "5300000001" in registros
+
+
+
+def test_no_expone_datos_en_error_http(caplog):
+    def manejar(request):
+        return httpx.Response(
+            400,
+            text="Error: telefono 3001234567 no valido",
+        )
+
+    with caplog.at_level("WARNING", logger="sit.adaptadores.rest"):
+        with pytest.raises(ErrorPlataforma):
+            _adaptador(manejar).enviar(
+                MensajeOperador(
+                    "POST /shipments",
+                    {"reference": "PED-1001"},
+                )
+            )
+
+    assert "3001234567" not in caplog.text
+    assert "rechazo HTTP 400" in caplog.text
+
+
+def test_no_expone_datos_en_respuesta_no_json(caplog):
+    def manejar(request):
+        return httpx.Response(
+            200,
+            text="Respuesta con datos privados 3001234567",
+        )
+
+    with caplog.at_level("WARNING", logger="sit.adaptadores.rest"):
+        with pytest.raises(ErrorPlataforma):
+            _adaptador(manejar).enviar(
+                MensajeOperador(
+                    "POST /shipments",
+                    {"reference": "PED-1001"},
+                )
+            )
+
+    assert "3001234567" not in caplog.text
+    assert "JSON inválido" in caplog.text
